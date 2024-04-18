@@ -28,8 +28,8 @@ const sendEmail = async (mail, OTP) => {
         const transporter = nodemailer.createTransport({
             service: 'gmail', // e.g., 'gmail'
             auth: {
-                user: 't.guptacool1909@gmail.com',
-                pass: 'hdquiboomzjchpiz',
+                user: 'owner@gmail.com', // mail should be of owner 
+                pass: 'ownerPassword',   //  password should of owner too
             },
         });
         // Set up email data
@@ -55,10 +55,10 @@ const sendEmail = async (mail, OTP) => {
 app.post('/register', async (req, res) => {
     try {
         const { email, password } = req.body;
-        // const existingUser = await User.findOne({ email });
-        // if (existingUser) {
-        //     return res.status(400).json({ error: 'User already exists' });
-        // }
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ error: 'User already exists' });
+        }
 
         const otp = generateOTP();
         console.log(otp);
@@ -73,8 +73,31 @@ app.post('/register', async (req, res) => {
         console.error(error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
+});
 
-})
+// API endpoint to verify OTP and add extra information
+app.post('/verify', async (req, res) => {
+    try {
+        const { email, otp, location, age, workDetails } = req.body;
+        const user = await User.findOne({ email, otp });
+        if (!user) {
+            return res.status(400).json({ error: 'Invalid OTP' });
+        }
+
+        // Update user with extra information
+        user.location = location;
+        user.age = age;
+        user.workDetails = workDetails;
+        await user.save();
+
+        return res.status(200).json({ message: 'User verified and extra information saved successfully.', user: user });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
 
 
 
@@ -83,14 +106,14 @@ app.post('/login', async (req, res) => {
 
     const { email, password } = req.body;
     try {
-        const user = await Users.find({ email: email });
+        const user = await User.find({ email: email });
         // console.log(user[0].password);
         if (user) {
             const passMatch = bcrypt.compareSync(password, user[0].password);
             //  console.log(passMatch)
             // console.log(user[0].email, user[0]._id);
             if (passMatch) {           // process.env.jwtsecret    
-                jwt.sign({ email: user[0].email, id: user[0]._id }, privateKey, { algorithm: 'RS256' }, (err, token) => {
+                jwt.sign({ email: user[0].email, id: user[0]._id }, process.env.JWT_SECRET, (err, token) => {
                     if (err)
                         throw err;
                     res.json({ user, message: "login successful", authToken: token, success: true }).status(200);

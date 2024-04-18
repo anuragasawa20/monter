@@ -28,8 +28,10 @@ const sendEmail = async (mail, OTP) => {
         const transporter = nodemailer.createTransport({
             service: 'gmail', // e.g., 'gmail'
             auth: {
-                user: 'owner@gmail.com', // mail should be of owner 
-                pass: 'ownerPassword',   //  password should of owner too
+                user: 't.guptacool1909@gmail.com',
+                pass: 'hdquiboomzjchpiz',
+                // user: 'owner@gmail.com', // mail should be of owner 
+                // pass: 'ownerPassword',   //  password should of owner too
             },
         });
         // Set up email data
@@ -100,18 +102,16 @@ app.post('/verify', async (req, res) => {
 
 
 
-
-
 app.post('/login', async (req, res) => {
 
     const { email, password } = req.body;
     try {
         const user = await User.find({ email: email });
         // console.log(user[0].password);
+        // console.log(user[0]);
         if (user) {
             const passMatch = bcrypt.compareSync(password, user[0].password);
-            //  console.log(passMatch)
-            // console.log(user[0].email, user[0]._id);
+
             if (passMatch) {           // process.env.jwtsecret    
                 jwt.sign({ email: user[0].email, id: user[0]._id }, process.env.JWT_SECRET, (err, token) => {
                     if (err)
@@ -132,6 +132,37 @@ app.post('/login', async (req, res) => {
     }
 });
 
+// Middleware to verify JWT token
+function verifyToken(req, res, next) {
+    const token = req.headers['authorization'];
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        req.userEmail = decoded.email;
+        next();
+    });
+}
+
+
+// API endpoint to retrieve user information after login
+app.get('/user', verifyToken, async (req, res) => {
+    try {
+        const userEmail = req.userEmail;
+        const user = await User.findOne({ email: userEmail });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        return res.status(200).json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 
 const port = process.env.PORT || 5000;

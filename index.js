@@ -28,10 +28,8 @@ const sendEmail = async (mail, OTP) => {
         const transporter = nodemailer.createTransport({
             service: 'gmail', // e.g., 'gmail'
             auth: {
-                user: 't.guptacool1909@gmail.com',
-                pass: 'hdquiboomzjchpiz',
-                // user: 'owner@gmail.com', // mail should be of owner 
-                // pass: 'ownerPassword',   //  password should of owner too
+                user: 'owner@gmail.com', // mail should be of owner 
+                pass: 'ownerPassword',   //  password should of owner too
             },
         });
         // Set up email data
